@@ -120,13 +120,13 @@ class CoordinateTree:
         # Walk up the tree, multiplying by the appropriate matrix
         # for each coordinate system we pass through
 
-        # BUG: Shouldn't this be left-hand for one and right-hand for the other?
         while (not (t is f)):
             if t.level>=f.level:
                 m = m * t.cs.get_active_matrix();
                 t=t.parent
             elif f.level>=t.level:
-                m = m * f.cs.get_passive_matrix();
+                #m = m * f.cs.get_passive_matrix();
+                m =  f.cs.get_passive_matrix() * m;
                 f=f.parent
         return m
 
@@ -193,7 +193,9 @@ class CoordinateTree:
             output_str += self.povray_cylinder(xp_proj, xn_proj, "Red");
             output_str += self.povray_cylinder(yp_proj, yn_proj, "Green");
             output_str += self.povray_cylinder(zp_proj, zn_proj, "Blue");
-            output_str +='text {{ internal 1 "{0}" 0.1, 0  scale .2 pigment {{Yellow}} translate <{1}, {2}, {3}>}}\n'.format(csts,xp_proj[0,0], xp_proj[1,0]+.1, xp_proj[2,0]) 
+            output_str +=\
+                'text {{ internal 1 "{0}" 0.1, 0  scale .2 pigment {{Yellow}} translate <{1}, {2}, {3}>}}\n'\
+                .format(csts,xp_proj[0,0], xp_proj[1,0]+.1, xp_proj[2,0]) 
         return self.pov_ray_preamble() + output_str
 
     def pov_ray_preamble(self):
@@ -209,7 +211,9 @@ class CoordinateTree:
         return p;
 
     def povray_cylinder(self, v1, v2, color):
-            v_str = 'cylinder {{ <{0}, {1}, {2}>, <{3}, {4}, {5}>, 0.1 open texture {{ pigment {{ color {6}}}}}}}\n'.format(v1[0,0], v1[1,0], v1[2,0], v2[0,0], v2[1,0], v2[2,0], color)
+            v_str =\
+                'cylinder {{ <{0}, {1}, {2}>, <{3}, {4}, {5}>, 0.1 open texture {{ pigment {{ color {6}}}}}}}\n'\
+                .format(v1[0,0], v1[1,0], v1[2,0], v2[0,0], v2[1,0], v2[2,0], color)
 
 
             return v_str

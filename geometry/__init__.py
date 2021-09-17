@@ -2,8 +2,6 @@
 
 # fix a*m v. m*a bug
 # fix type hints
-# convert to module
-# fix messy string formatting
 # errors for unreachable nodes
 
 
@@ -12,7 +10,7 @@ import sys;
 import json
 import math
 
-def deg2rad(x):
+def deg2rad(x:float):
     """ Convert from degreese to radians"""
     return math.pi*x/180
 
@@ -69,18 +67,24 @@ class CoordinateSystem:
                     Translational offsets are applied before rotation and the 
                     order of rotation is X, Y, Z.
         """
-        self.offset_x, self.offset_y, self.offset_z, self.angle_x, self.angle_y, self.angle_z = vec[0], vec[1], vec[2], vec[3], vec[4], vec[5]
+        self.offset_x, \
+        self.offset_y, \
+        self.offset_z, \
+        self.angle_x,  \
+        self.angle_y,  \
+        self.angle_z = vec
+
         self.name=name
         self.parent_name = parent
 
 
 class CoordinateTreeNode:
     cs: CoordinateSystem
-    parent  = None
-    children =  None
+    parent: 'CoordinateTreeNode'
+    children: 'CoordinateTreeNode'
     level: int
 
-    def __init__(self, cs, parent, level):
+    def __init__(self, cs:CoordinateSystem, parent:'CoordinateTreeNode', level:int):
         self.cs=cs
         self.parent=parent
         self.level=level
@@ -97,7 +101,7 @@ class CoordinateTree:
     rootT: CoordinateTreeNode   # Tree Node fro the root coordinate system
     NameToCS = {}               # Mapping of coordinate system names
     
-    def get_projection_matrix(self, frm, to):
+    def get_projection_matrix(self, frm:str, to:str):
         """Compute a matrix that translates points in the coordinate
         system of "frm" to the coordinate system "to".
           to   -  the name of the new coordinate system.
@@ -110,10 +114,6 @@ class CoordinateTree:
         
         f = self.NameToCS[frm]
         t = self.NameToCS[to]
-        print(frm)
-        print(to)
-        print(f)
-        print(t)
 
         m = numpy.identity(4)
 
@@ -130,7 +130,7 @@ class CoordinateTree:
                 f=f.parent
         return m
 
-    def load_from_file(self, fn):
+    def load_from_file(self, fn:str):
         """Load coordinate systems from a file
           - fn a JSON file containing coordinate system information
         """
@@ -164,7 +164,7 @@ class CoordinateTree:
         self.resolve_levels(self.rootT, 0)
 
             
-    def resolve_levels(self, cur, level):
+    def resolve_levels(self, cur:CoordinateTreeNode, level:int):
         cur.level=level
         for n in cur.children:
             self.resolve_levels(n, level+1)
@@ -193,7 +193,7 @@ class CoordinateTree:
             output_str += self.povray_cylinder(xp_proj, xn_proj, "Red");
             output_str += self.povray_cylinder(yp_proj, yn_proj, "Green");
             output_str += self.povray_cylinder(zp_proj, zn_proj, "Blue");
-            output_str +="text { internal 1 \"%s\" 0.1, 0  scale .2 pigment {Yellow} translate <%f, %f, %f>}\n"%(csts,xp_proj[0], xp_proj[1]+.1, xp_proj[2]) 
+            output_str +='text {{ internal 1 "{0}" 0.1, 0  scale .2 pigment {{Yellow}} translate <{1}, {2}, {3}>}}\n'.format(csts,xp_proj[0,0], xp_proj[1,0]+.1, xp_proj[2,0]) 
         return self.pov_ray_preamble() + output_str
 
     def pov_ray_preamble(self):
@@ -208,24 +208,10 @@ class CoordinateTree:
         """
         return p;
 
-
-
     def povray_cylinder(self, v1, v2, color):
-            v_str = "cylinder { <%f, %f, %f>, <%f, %f, %f>, 0.1 open texture { pigment { color %s}}}\n" % (v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], color)
+            v_str = 'cylinder {{ <{0}, {1}, {2}>, <{3}, {4}, {5}>, 0.1 open texture {{ pigment {{ color {6}}}}}}}\n'.format(v1[0,0], v1[1,0], v1[2,0], v2[0,0], v2[1,0], v2[2,0], color)
 
 
             return v_str
 
-
-
-def main():
-    ct = CoordinateTree()
-    ct.load_from_file(sys.argv[1])
-
-    print(ct.get_projection_matrix("system3", "system1"))
-
-    f = open("3.pov", "w");
-    f.write(ct.to_pov_ray())
-
-main()
 

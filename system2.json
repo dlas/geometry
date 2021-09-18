@@ -7,12 +7,12 @@
 	},
 	{
 		"name": "system2",
-		"relative": [2,2,0,0,0,45],
+		"relative": [2,2,0,0,20,45],
 		"parent": "root"
 	},
 	{
 		"name":"system3",
-		"relative": [3,3,3,0,0,0],
+		"relative": [3,3,3,60,0,0],
 		"parent": "system2"
 	}
 ]

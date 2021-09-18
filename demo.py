@@ -2,6 +2,7 @@
 
 import geometry
 import sys
+import os
 
 
 def main():
@@ -17,5 +18,9 @@ def main():
 
     f = open("demo.pov", "w");
     f.write(ct.to_pov_ray(sys.argv[2]))
+    f.close()
+
+    os.system("povray demo.pov -H2000 -W2000")
+    os.system("eog demo.png")
 
 main()

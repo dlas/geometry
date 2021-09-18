@@ -38,7 +38,7 @@ class CoordinateSystem:
         c2 = math.cos(deg2rad(self.angle_y))
         c3 = math.cos(deg2rad(self.angle_z))
 
-        v1 = [c2*c3, -s2, -c2*s3, self.offset_x]
+        v1 = [c2*c3, -s2, c2*s3, self.offset_x]
         v2 = [s1*s3 + c1*c3*s2, c1*c2, c1*s2*s3-c3*s1, self.offset_y]
         v3 = [c3*s1*s2 - c1*s3, c2*s1, c1*c3 + s1*s2*s3, self.offset_z]
         v4 = [0, 0, 0, 1]

@@ -7,7 +7,7 @@
 	},
 	{
 		"name": "system2",
-		"relative": [2,2,0,0,30,45],
+		"relative": [2,2,0,0,0,45],
 		"parent": "root"
 	},
 	{

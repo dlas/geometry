@@ -28,3 +28,15 @@ def test2():
 
     assert((m)*(n * v) == pytest.approx(v))
 
+def test_solver1():
+    ct = geometry.CoordinateTree();
+
+    m = numpy.identity(4)
+
+    v1 = numpy.matrix([[1],[2],[3],[1]]);
+    v2 = numpy.matrix([[4],[5],[6],[1]]);
+
+    r = ct.solve([m,m,m,m], {0:{"row":0, "var":0}, 1:{"row":2, "var":1}, 2:{"row":1, "var":2}}, v1, v2);
+
+    print(r)
+

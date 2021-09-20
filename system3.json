@@ -1,0 +1,40 @@
+
+[
+	{
+		"name": "simple",
+		"relative": [2,1,0,0,0,0],
+		"parent": "root"
+	},	
+	{
+		"name": "systemx",
+		"relative": [0,2,0,0,45,0],
+		"parent": "root"
+	},	{
+		"name": "systemx2",
+		"relative": [0,0,0,0,0,0],
+		"parent": "systemx"
+	},
+	{
+		"name": "system1",
+		"relative": [0,2,0,15,10,15],
+		"parent": "root"
+	},
+	{
+		"name": "system2",
+		"relative": [1,0,0,70,10,10],
+		"parent": "system1"
+	},
+	{
+		"name":"system3",
+		"relative": [0,0,1,0,0,20],
+		"parent": "system2"
+	},
+	{
+		"name":"system4",
+		"relative": [0,3,0,0,0,45],
+		"parent": "system3"
+	}
+		
+]
+
+

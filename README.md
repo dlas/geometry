@@ -1,4 +1,4 @@
 # A simple python library for nested coordinate system management
 
 
-./demo.py system2.json root
+./demo.py system3.json root

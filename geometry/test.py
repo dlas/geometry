@@ -29,14 +29,19 @@ def test2():
     assert((m)*(n * v) == pytest.approx(v))
 
 def test_solver1():
-    ct = geometry.CoordinateTree();
+    
+    ct = geometry.CoordinateTree()
+    ct.load_from_file("test_2.json")
+    u =  {"system1":["x"], "system2":["y"], "system3":["z"]};
 
-    m = numpy.identity(4)
+    v = numpy.matrix([[5],[5],[5],[1]])
+    z = numpy.matrix([[0],[0],[0],[1]])
+    r = ct.solve("system4", u, v);
 
-    v1 = numpy.matrix([[1],[2],[3],[1]]);
-    v2 = numpy.matrix([[4],[5],[6],[1]]);
+    ct.moveall(r);
 
-    r = ct.solve([m,m,m,m], {0:{"row":0, "var":0}, 1:{"row":2, "var":1}, 2:{"row":1, "var":2}}, v1, v2);
+    m = ct.get_projection_matrix("root", "system4")
 
-    print(r)
+    assert(m*v == pytest.approx(z))
+
 

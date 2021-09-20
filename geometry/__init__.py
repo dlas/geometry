@@ -28,7 +28,7 @@ class CoordinateSystem:
     parent_name: str
     name: str
 
-    def get_active_matrix(self) -> numpy.matrix :
+    def get_active_matrix(self) -> numpy.matrix:
         """ Compute a numpy matrix representig the active translation of coordiantes
         in this coordinate system to coordinates in the parent coordinate system
         """
@@ -39,9 +39,9 @@ class CoordinateSystem:
         c2 = math.cos(deg2rad(self.angle_y))
         c3 = math.cos(deg2rad(self.angle_z))
 
-        v1 = [c2*c3, -s2, c2*s3, self.offset_x]
-        v2 = [s1*s3 + c1*c3*s2, c1*c2, c1*s2*s3-c3*s1, self.offset_y]
-        v3 = [c3*s1*s2 - c1*s3, c2*s1, c1*c3 + s1*s2*s3, self.offset_z]
+        v1 = [c2*c3, -s2, c2*s3, -self.offset_x]
+        v2 = [s1*s3 + c1*c3*s2, c1*c2, c1*s2*s3-c3*s1, -self.offset_y]
+        v3 = [c3*s1*s2 - c1*s3, c2*s1, c1*c3 + s1*s2*s3, -self.offset_z]
         v4 = [0, 0, 0, 1]
 
         return numpy.matrix([v1, v2, v3, v4])
@@ -56,7 +56,7 @@ class CoordinateSystem:
         # way to do this... But i'm lazy!
         return numpy.linalg.inv(self.get_active_matrix())
 
-    def __init__(self, name:str, parent:str, vec: List[float]):
+    def __init__(self, name: str, parent: str, vec: List[float]):
         """
           name    - the name of this coordinate system
           parent  - the name of the parent coordinate system
@@ -175,7 +175,7 @@ class CoordinateTree:
         zn_vec = numpy.matrix([[0], [0], [-1], [1]])
 
         for csts in self.NameToCS:
-            tx = self.get_projection_matrix(r, csts)
+            tx = self.get_projection_matrix(csts, r)
             xp_proj = tx*xp_vec
             yp_proj = tx*yp_vec
             zp_proj = tx*zp_vec
@@ -203,53 +203,27 @@ class CoordinateTree:
         """
         return p
 
-    def povray_cylinder(self, v1:numpy.matrix, v2:numpy.matrix, color:str) -> str:
+    def povray_cylinder(self, v1: numpy.matrix, v2: numpy.matrix, color: str) -> str:
         v_str =\
             'cylinder {{ <{0}, {1}, {2}>, <{3}, {4}, {5}>, 0.1 open texture {{ pigment {{ color {6}}}}}}}\n'\
             .format(v1[0, 0], v1[1, 0], v1[2, 0], v2[0, 0], v2[1, 0], v2[2, 0], color)
 
         return v_str
 
-    def solve2(self, matrixlist, unknowns, v, t):
-        m = numpy.zeros((4,4))
-        r = numpy.identity(4)
-        m[3,3] = 1
-
-        for i in range(0,len(matrixlist)):
-            if (i in unknowns):
-                row = unknowns[i]["row"]
-                var = unknowns[i]["var"]
-                m[0,var]=r[0,row]
-                m[1,var]=r[1,row]
-                m[2,var]=r[2,row]
-
-            r = r * matrixlist[i]
-        
-        print(r)
-        print(m)
-        print(t)
-        print(v)
-
-        result = numpy.linalg.inv(m) * (numpy.linalg.inv(r) * t - v)
-
-        return result
-
-
-    def move(self, system, axis, v): 
-        cs = self.NameToCS[system].cs;
+    def moveone(self, system, axis, v):
+        cs = self.NameToCS[system].cs
         if (axis == 'x'):
-            cs.offset_x = v + cs.offset_x;
+            cs.offset_x = v + cs.offset_x
         elif (axis == 'y'):
-            cs.offset_y = v + cs.offset_y;
+            cs.offset_y = v + cs.offset_y
         elif (axis == 'z'):
-            cs.offset_z = v + cs.offset_z;
+            cs.offset_z = v + cs.offset_z
 
-    def vecmove(self, unknowns):
-        idx = 0;
+    def moveall(self, unknowns):
+        idx = 0
         for u in unknowns:
             for a in unknowns[u]:
-                print("set %s %s to %f"%(u, a, unknowns[u][a]))
-                self.move(u, a, unknowns[u][a])
+                self.moveone(u, a, unknowns[u][a])
 
     def solve(self, endsystem, unknowns, t):
         """ Assume that certain axis are movable and compute
@@ -268,59 +242,62 @@ class CoordinateTree:
                     result will a vector given their values.
         """
 
-        m = numpy.zeros((4,4))
+        # The m matrix will learn the linear dependency
+        # of the center of the endsystem as a function of
+        # three variables.
+        m = numpy.zeros((4, 4))
+        m[3, 3] = 1
+
+        # The r matrix rotation and tanslation offsets
+        # from all the intermediate coordinate systems
         r = numpy.identity(4)
-        m[3,3] = 1
-        v = numpy.matrix([[0],[0],[0],[1]]);
+        v = numpy.matrix([[0], [0], [0], [1]])
 
         r2i = {"x": 0, "y": 1, "z": 2}
-        cur = self.NameToCS[endsystem]
         var = 0
 
+        # Find the path from the root coordinate system
+        # to endsystem. Record the path "backwards"
+        # starting from root to the system.
+        cur = self.NameToCS[endsystem]
         path = []
+        while (cur is not self.rootT):
+            path = [cur] + path
+            cur = cur.parent
 
-        while (cur is not self.rootT):
-            cur = cur.parent;
-        while (cur is not self.rootT):
+        # Apply transformation matrices, starting at the root until we get to
+        # the end system.  if we encounter an "unknown variable" stash the
+        # transformation elements into the m matrix for use later
+        for cur in path:
             name = cur.cs.name
+            r = r * cur.cs.get_passive_matrix()
             if (name in unknowns):
                 for rowname in (unknowns[name]):
                     rowindex = r2i[rowname]
-                    m[0,var]=r[0,rowindex]
-                    m[1,var]=r[1,rowindex]
-                    m[2,var]=r[2,rowindex]
-                    var = var +1
+                    m[0, var] = r[0, rowindex]
+                    m[1, var] = r[1, rowindex]
+                    m[2, var] = r[2, rowindex]
+                    var = var + 1
 
-            r =  r * cur.cs.get_passive_matrix() ;
-            cur = cur.parent
-        
+        # The subsequent linear algebra assumes exactly three unknowns
         if (var != 3):
             raise ValueError("solve required exactly three unknowns")
 
-        print(r)
-        print(m)
-        print(t)
-        print(v)
+        # Solve the linear equiation for the 3 provided unknowns
+        result = numpy.linalg.inv(m) * (t - r*v)
 
-        result = numpy.linalg.inv(m) * (numpy.linalg.inv(r) * t - v)
-        print(result)
-
+        # Format the result nicely
         rmap = {}
-        cur = self.NameToCS[endsystem]
         var = 0
-        while (cur is not self.rootT):
+        for cur in path:
             name = cur.cs.name
             if (name in unknowns):
                 for rowname in (unknowns[name]):
                     rowindex = r2i[rowname]
                     if not name in rmap:
-                        rmap[name]={}
+                        rmap[name] = {}
 
-                    print(name)
-                    print(rowname)
-                    rmap[name][rowname] = result[var,0]
-                    var +=1
-            cur = cur.parent
+                    rmap[name][rowname] = result[var, 0]
+                    var += 1
 
         return rmap
-
